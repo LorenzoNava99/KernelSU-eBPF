@@ -1,0 +1,31 @@
+name: 6.1.1x Only - Full eBPF All Maps + Ringbuf + CO-RE
+
+# Run ID 18014848632 - Commit 04429c26
+# Same comprehensive eBPF as run 18014030888 but only for 6.1.1x kernels
+# Build matrix reduced from 8 to 3 kernels for faster builds
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-6-1-ebpf:
+    strategy:
+      matrix:
+        include:
+          - version: "6.1"
+            sub_level: 112
+            os_patch_level: 2024-11
+          - version: "6.1"
+            sub_level: 115
+            os_patch_level: 2024-12
+          - version: "6.1"
+            sub_level: 118
+            os_patch_level: 2025-01
+    uses: ./.github/workflows/gki-kernel.yml
+    secrets: inherit
+    with:
+      version: android14-${{ matrix.version }}
+      version_name: android14-${{ matrix.version }}.${{ matrix.sub_level }}
+      tag: android14-${{ matrix.version }}-${{ matrix.os_patch_level }}
+      os_patch_level: ${{ matrix.os_patch_level }}
+      patch_path: ${{ matrix.version }}

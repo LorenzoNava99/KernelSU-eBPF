@@ -1,0 +1,53 @@
+name: Kprobes + Override + BTF + JIT - Basic eBPF
+
+# Run ID 18013225724 - Commit a90d99ac
+# Basic eBPF with:
+# - BPF JIT compilation (CONFIG_BPF_JIT=y, CONFIG_BPF_JIT_ALWAYS_ON=y)
+# - Kprobes and Kretprobes (CONFIG_KPROBES=y, CONFIG_KRETPROBES=y)
+# - bpf_override_return() (CONFIG_BPF_KPROBE_OVERRIDE=y)
+# - Function error injection (CONFIG_FUNCTION_ERROR_INJECTION=y)
+# - BTF support (CONFIG_DEBUG_INFO_BTF=y, CONFIG_DEBUG_INFO_BTF_MODULES=y)
+# - BPF LSM (CONFIG_BPF_LSM=y)
+# - Network classifiers (CONFIG_NET_CLS_BPF=y, CONFIG_NET_ACT_BPF=y)
+# - Dynamic ftrace (CONFIG_DYNAMIC_FTRACE=y)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-basic-ebpf-kernel:
+    strategy:
+      matrix:
+        include:
+          - version: "5.15"
+            sub_level: 157
+            os_patch_level: 2024-10
+          - version: "5.15"
+            sub_level: 162
+            os_patch_level: 2024-11
+          - version: "5.15"
+            sub_level: 165
+            os_patch_level: 2024-12
+          - version: "5.15"
+            sub_level: 168
+            os_patch_level: 2025-01
+          - version: "6.1"
+            sub_level: 102
+            os_patch_level: 2024-10
+          - version: "6.1"
+            sub_level: 112
+            os_patch_level: 2024-11
+          - version: "6.1"
+            sub_level: 115
+            os_patch_level: 2024-12
+          - version: "6.1"
+            sub_level: 118
+            os_patch_level: 2025-01
+    uses: ./.github/workflows/gki-kernel.yml
+    secrets: inherit
+    with:
+      version: android14-${{ matrix.version }}
+      version_name: android14-${{ matrix.version }}.${{ matrix.sub_level }}
+      tag: android14-${{ matrix.version }}-${{ matrix.os_patch_level }}
+      os_patch_level: ${{ matrix.os_patch_level }}
+      patch_path: ${{ matrix.version }}

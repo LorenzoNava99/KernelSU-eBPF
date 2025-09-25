@@ -1,0 +1,59 @@
+name: Full eBPF - All Maps + Ringbuf + Uprobes + XDP + CO-RE
+
+# Run ID 18014030888 - Commit b5d27723
+# Comprehensive eBPF with 100+ configs including:
+# - All BPF map types (hash, array, percpu, LRU, LPM trie, stack trace, queue, sockmap, xskmap, ringbuf, etc.)
+# - CO-RE support (CONFIG_BPF_CO_RE=y)
+# - Ring buffers (CONFIG_BPF_MAP_TYPE_RINGBUF=y)
+# - Uprobes (CONFIG_UPROBES=y, CONFIG_UPROBE_EVENTS=y)
+# - XDP sockets (CONFIG_XDP_SOCKETS=y)
+# - Cgroup BPF (CONFIG_CGROUP_BPF=y)
+# - Performance events (CONFIG_PERF_EVENTS=y, CONFIG_HW_PERF_EVENTS=y)
+# - BPF preload (CONFIG_BPF_PRELOAD=y, CONFIG_BPF_PRELOAD_UMD=y)
+# - BPF stats (CONFIG_BPF_STATS=y)
+# - Android binder tracing support
+# - Full ftrace capabilities (syscalls, function graph, dynamic with regs)
+# - Network TC/XDP/ingress/egress
+# - Security LSM hooks
+# - Raw tracepoints
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-full-ebpf-kernel:
+    strategy:
+      matrix:
+        include:
+          - version: "5.15"
+            sub_level: 157
+            os_patch_level: 2024-10
+          - version: "5.15"
+            sub_level: 162
+            os_patch_level: 2024-11
+          - version: "5.15"
+            sub_level: 165
+            os_patch_level: 2024-12
+          - version: "5.15"
+            sub_level: 168
+            os_patch_level: 2025-01
+          - version: "6.1"
+            sub_level: 102
+            os_patch_level: 2024-10
+          - version: "6.1"
+            sub_level: 112
+            os_patch_level: 2024-11
+          - version: "6.1"
+            sub_level: 115
+            os_patch_level: 2024-12
+          - version: "6.1"
+            sub_level: 118
+            os_patch_level: 2025-01
+    uses: ./.github/workflows/gki-kernel.yml
+    secrets: inherit
+    with:
+      version: android14-${{ matrix.version }}
+      version_name: android14-${{ matrix.version }}.${{ matrix.sub_level }}
+      tag: android14-${{ matrix.version }}-${{ matrix.os_patch_level }}
+      os_patch_level: ${{ matrix.os_patch_level }}
+      patch_path: ${{ matrix.version }}

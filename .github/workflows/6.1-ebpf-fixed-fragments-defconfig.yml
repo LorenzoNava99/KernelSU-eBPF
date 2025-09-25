@@ -1,0 +1,31 @@
+name: 6.1.1x eBPF Fixed Fragments - All Maps + CO-RE + DEFCONFIG_FRAGMENT
+
+# Run ID 18017414397 - Commit d7d7bb13
+# Full eBPF with proper fragment loading via DEFCONFIG_FRAGMENT variable
+# Fixed defconfig validation errors by not modifying gki_defconfig directly
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-fixed-fragments:
+    strategy:
+      matrix:
+        include:
+          - version: "6.1"
+            sub_level: 112
+            os_patch_level: 2024-11
+          - version: "6.1"
+            sub_level: 115
+            os_patch_level: 2024-12
+          - version: "6.1"
+            sub_level: 118
+            os_patch_level: 2025-01
+    uses: ./.github/workflows/gki-kernel-ebpf.yml
+    secrets: inherit
+    with:
+      version: android14-${{ matrix.version }}
+      version_name: android14-${{ matrix.version }}.${{ matrix.sub_level }}
+      tag: android14-${{ matrix.version }}-${{ matrix.os_patch_level }}
+      os_patch_level: ${{ matrix.os_patch_level }}
+      patch_path: ${{ matrix.version }}

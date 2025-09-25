@@ -1,0 +1,33 @@
+name: 6.1.1x ARM64 - bpf_override_return + Error Injection + All eBPF
+
+# Run ID 18019071531 - Commit 5355dbc9
+# COMPLETE eBPF with ARM64 error injection patch
+# Enables CONFIG_HAVE_FUNCTION_ERROR_INJECTION on ARM64
+# Full bpf_override_return() support on ARM64 devices
+# Includes custom patch: 0001-arm64-error-injection.patch
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-arm64-override:
+    strategy:
+      matrix:
+        include:
+          - version: "6.1"
+            sub_level: 112
+            os_patch_level: 2024-11
+          - version: "6.1"
+            sub_level: 115
+            os_patch_level: 2024-12
+          - version: "6.1"
+            sub_level: 118
+            os_patch_level: 2025-01
+    uses: ./.github/workflows/gki-kernel-ebpf.yml
+    secrets: inherit
+    with:
+      version: android14-${{ matrix.version }}
+      version_name: android14-${{ matrix.version }}.${{ matrix.sub_level }}
+      tag: android14-${{ matrix.version }}-${{ matrix.os_patch_level }}
+      os_patch_level: ${{ matrix.os_patch_level }}
+      patch_path: ${{ matrix.version }}

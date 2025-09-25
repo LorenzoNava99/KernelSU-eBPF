@@ -1,0 +1,46 @@
+name: Full Matrix ARM64 - bpf_override_return + All Maps + XDP
+
+# Run ID 18019071550 - Commit 5355dbc9
+# Same ARM64 error injection as 18019071531 but for ALL kernel versions
+# Full Android 14 matrix (5.15 and 6.1 series)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-full-arm64:
+    strategy:
+      matrix:
+        include:
+          - version: "5.15"
+            sub_level: 157
+            os_patch_level: 2024-10
+          - version: "5.15"
+            sub_level: 162
+            os_patch_level: 2024-11
+          - version: "5.15"
+            sub_level: 165
+            os_patch_level: 2024-12
+          - version: "5.15"
+            sub_level: 168
+            os_patch_level: 2025-01
+          - version: "6.1"
+            sub_level: 102
+            os_patch_level: 2024-10
+          - version: "6.1"
+            sub_level: 112
+            os_patch_level: 2024-11
+          - version: "6.1"
+            sub_level: 115
+            os_patch_level: 2024-12
+          - version: "6.1"
+            sub_level: 118
+            os_patch_level: 2025-01
+    uses: ./.github/workflows/gki-kernel.yml
+    secrets: inherit
+    with:
+      version: android14-${{ matrix.version }}
+      version_name: android14-${{ matrix.version }}.${{ matrix.sub_level }}
+      tag: android14-${{ matrix.version }}-${{ matrix.os_patch_level }}
+      os_patch_level: ${{ matrix.os_patch_level }}
+      patch_path: ${{ matrix.version }}
