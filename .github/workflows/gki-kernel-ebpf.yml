@@ -112,14 +112,6 @@ jobs:
         run: |
           GKI_ROOT=$GITHUB_WORKSPACE/android-kernel
           echo "[+] GKI_ROOT: $GKI_ROOT"
-          echo "[+] Copy eBPF config and setup script"
-          cp $GITHUB_WORKSPACE/KernelSU/kernel/ebpf_enhanced_config.fragment $GKI_ROOT/ebpf_config.fragment
-          cp $GITHUB_WORKSPACE/KernelSU/kernel/setup_ebpf.sh $GKI_ROOT/
-          chmod +x $GKI_ROOT/setup_ebpf.sh
-
-          cd $GKI_ROOT
-          echo "[+] Running eBPF setup"
-          ./setup_ebpf.sh --cleanup || echo "No previous setup to cleanup"
 
           # Link KernelSU
           ln -sf $GITHUB_WORKSPACE/KernelSU/kernel $GKI_ROOT/common/drivers/kernelsu
@@ -130,24 +122,25 @@ jobs:
           grep -q "kernelsu" "$DRIVER_MAKEFILE" || printf "\nobj-\$(CONFIG_KSU) += kernelsu/\n" >> "$DRIVER_MAKEFILE"
           grep -q "kernelsu" "$DRIVER_KCONFIG" || sed -i "/endmenu/i\\source \"drivers/kernelsu/Kconfig\"" "$DRIVER_KCONFIG"
 
-          # Apply eBPF configuration
-          echo "[+] Applying eBPF configuration"
+          # Apply eBPF configuration via fragments (NOT modifying gki_defconfig directly)
+          echo "[+] Setting up eBPF configuration fragments"
           CONFIG_DIR=$GKI_ROOT/common/arch/arm64/configs
 
-          # Create eBPF defconfig fragment
+          # Copy eBPF fragment
           cp $GITHUB_WORKSPACE/KernelSU/kernel/ebpf_enhanced_config.fragment $CONFIG_DIR/ebpf_config.fragment
 
-          # Merge with GKI defconfig
-          if [ -f "$CONFIG_DIR/gki_defconfig" ]; then
-            echo "[+] Merging eBPF config with gki_defconfig"
-            cat $CONFIG_DIR/ebpf_config.fragment >> $CONFIG_DIR/gki_defconfig
-          fi
-
-          # Also update build.config to include fragment
+          # Update build.config to use fragments properly
           BUILD_CONFIG=$GKI_ROOT/common/build.config.gki.aarch64
           if [ -f "$BUILD_CONFIG" ]; then
             echo "[+] Adding eBPF fragment to build config"
-            echo "FRAGMENT_CONFIG=\"\${FRAGMENT_CONFIG} arch/arm64/configs/ebpf_config.fragment\"" >> $BUILD_CONFIG
+            # Check if DEFCONFIG_FRAGMENT is already set
+            if grep -q "^DEFCONFIG_FRAGMENT=" $BUILD_CONFIG; then
+              # Append to existing DEFCONFIG_FRAGMENT
+              sed -i '/^DEFCONFIG_FRAGMENT=/s|"$| ${ROOT_DIR}/${KERNEL_DIR}/arch/arm64/configs/ebpf_config.fragment"|' $BUILD_CONFIG
+            else
+              # Create new DEFCONFIG_FRAGMENT
+              echo "DEFCONFIG_FRAGMENT=\"\${ROOT_DIR}/\${KERNEL_DIR}/arch/arm64/configs/ebpf_config.fragment\"" >> $BUILD_CONFIG
+            fi
           fi
 
           echo "[+] Apply Compilation Patches"
