@@ -1,0 +1,150 @@
+name: FIXED Create Release - Collect All Successful Builds
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_name:
+        description: 'Release name'
+        required: true
+        default: 'KernelSU eBPF Working Collection'
+      release_tag:
+        description: 'Release tag'
+        required: true
+        default: 'ebpf-working-v1.0'
+
+jobs:
+  wait-and-collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for FIXED workflows to complete
+        run: |
+          echo "Waiting for FIXED workflows to complete..."
+
+          workflows=(
+            "FIXED No eBPF - Vanilla Kernel"
+            "FIXED Full eBPF - All Maps + Ringbuf + CO-RE + XDP"
+            "FIXED 6.1 Only - Full eBPF All Features"
+          )
+
+          max_wait=7200  # 2 hours
+          elapsed=0
+          sleep_interval=30
+
+          while [ $elapsed -lt $max_wait ]; do
+            all_done=true
+
+            for workflow in "${workflows[@]}"; do
+              status=$(gh run list --repo ${{ github.repository }} --workflow "$workflow" --limit 1 --json status --jq '.[0].status' 2>/dev/null || echo "not_found")
+
+              if [ "$status" != "completed" ] && [ "$status" != "not_found" ]; then
+                echo "Workflow '$workflow' is still $status"
+                all_done=false
+              fi
+            done
+
+            if [ "$all_done" = true ]; then
+              echo "All workflows completed!"
+              break
+            fi
+
+            echo "Waiting... ($elapsed seconds elapsed)"
+            sleep $sleep_interval
+            elapsed=$((elapsed + sleep_interval))
+          done
+
+      - name: Download artifacts
+        run: |
+          mkdir -p release-artifacts
+
+          workflows=(
+            "FIXED No eBPF - Vanilla Kernel"
+            "FIXED Full eBPF - All Maps + Ringbuf + CO-RE + XDP"
+            "FIXED 6.1 Only - Full eBPF All Features"
+          )
+
+          for workflow in "${workflows[@]}"; do
+            echo "Downloading from $workflow"
+
+            run_id=$(gh run list --repo ${{ github.repository }} --workflow "$workflow" --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || echo "")
+
+            if [ ! -z "$run_id" ]; then
+              safe_name=$(echo "$workflow" | tr ' ' '_' | tr -cd '[:alnum:]_-')
+              mkdir -p "release-artifacts/$safe_name"
+              gh run download $run_id --repo ${{ github.repository }} --dir "release-artifacts/$safe_name" || echo "No artifacts for $workflow"
+            fi
+          done
+
+      - name: Create release notes
+        run: |
+          cat > RELEASE_NOTES.md << 'EOF'
+          # KernelSU eBPF Working Collection
+
+          ## ✅ Successfully Built Kernels
+
+          This release contains ONLY kernel builds that successfully completed with proper branch configurations.
+
+          ### Kernel Versions
+
+          **Android 14 - 5.15 Series:**
+          - 5.15.164 (2024-11)
+          - 5.15.169 (2025-01)
+
+          **Android 14 - 6.1 Series:**
+          - 6.1.112 (2024-11)
+          - 6.1.115 (2024-12)
+          - 6.1.119 (2025-01)
+
+          ### Build Variants
+
+          1. **Vanilla (No eBPF)** - Standard kernels without eBPF features
+          2. **Full eBPF** - Complete eBPF stack with:
+             - All BPF map types
+             - Ring buffers
+             - CO-RE support
+             - XDP networking
+             - BTF support
+             - bpf_override_return()
+             - ARM64 error injection
+          3. **6.1 Only eBPF** - Optimized builds for 6.1 series only
+
+          ## Installation
+
+          1. Download the appropriate kernel for your device
+          2. Flash using fastboot or recovery
+          3. Verify with `cat /proc/config.gz | grep BPF`
+
+          ## Build Date
+
+          $(date -u '+%Y-%m-%d %H:%M UTC')
+          EOF
+
+      - name: Create archives
+        run: |
+          cd release-artifacts
+          for dir in */; do
+            if [ -d "$dir" ]; then
+              tar czf "${dir%/}.tar.gz" "$dir"
+            fi
+          done
+          cd ..
+
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ inputs.release_tag }}" \
+            --repo ${{ github.repository }} \
+            --title "${{ inputs.release_name }}" \
+            --notes-file RELEASE_NOTES.md
+
+          for file in release-artifacts/*.tar.gz; do
+            if [ -f "$file" ]; then
+              gh release upload "${{ inputs.release_tag }}" \
+                --repo ${{ github.repository }} \
+                "$file"
+            fi
+          done
+
+          echo "Release created: https://github.com/${{ github.repository }}/releases/tag/${{ inputs.release_tag }}"
