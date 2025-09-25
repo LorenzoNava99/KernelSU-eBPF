@@ -1,0 +1,224 @@
+name: 00 - Master Release - Collect All 10 Workflow Builds
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_name:
+        description: 'Release name'
+        required: true
+        default: 'KernelSU eBPF Complete Collection - All 10 Variants'
+      release_tag:
+        description: 'Release tag'
+        required: true
+        default: 'ebpf-master-v1.0'
+      wait_for_completion:
+        description: 'Wait for workflows to complete'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+        - 'true'
+        - 'false'
+
+jobs:
+  collect-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for workflows if requested
+        if: ${{ inputs.wait_for_completion == 'true' }}
+        run: |
+          echo "Waiting for all 10 workflows to complete..."
+
+          workflows=(
+            "01 - No eBPF - Vanilla Standard Build"
+            "02 - Basic eBPF - Kprobes + Override + BTF + JIT"
+            "03 - Full eBPF - All Maps + Ringbuf + Uprobes + XDP + CO-RE"
+            "04 - 6.1 Only - Full eBPF Optimized Build"
+            "05 - 6.1 eBPF Fixed Fragments - DEFCONFIG_FRAGMENT Method"
+            "06 - Safe eBPF 117 Configs - Fallback + Error Handling"
+            "07 - 6.1 eBPF Clean Build - mrproper + All Maps"
+            "08 - 6.1 ARM64 - bpf_override_return + Error Injection"
+            "09 - Full Matrix ARM64 - bpf_override_return + All Maps"
+            "10 - Final Complete eBPF - ARM64 + All Maps + CO-RE"
+          )
+
+          max_wait=14400  # 4 hours
+          elapsed=0
+          sleep_interval=60
+
+          while [ $elapsed -lt $max_wait ]; do
+            all_done=true
+            pending_count=0
+
+            for workflow in "${workflows[@]}"; do
+              status=$(gh run list --repo ${{ github.repository }} --workflow "$workflow" --limit 1 --json status --jq '.[0].status' 2>/dev/null || echo "not_found")
+
+              if [ "$status" != "completed" ] && [ "$status" != "not_found" ]; then
+                echo "[$status] $workflow"
+                all_done=false
+                pending_count=$((pending_count + 1))
+              fi
+            done
+
+            if [ "$all_done" = true ]; then
+              echo "All workflows completed!"
+              break
+            fi
+
+            echo "Waiting for $pending_count workflows... ($elapsed seconds elapsed)"
+            sleep $sleep_interval
+            elapsed=$((elapsed + sleep_interval))
+          done
+
+      - name: Collect all artifacts
+        run: |
+          mkdir -p release-artifacts
+
+          workflows=(
+            "01 - No eBPF - Vanilla Standard Build"
+            "02 - Basic eBPF - Kprobes + Override + BTF + JIT"
+            "03 - Full eBPF - All Maps + Ringbuf + Uprobes + XDP + CO-RE"
+            "04 - 6.1 Only - Full eBPF Optimized Build"
+            "05 - 6.1 eBPF Fixed Fragments - DEFCONFIG_FRAGMENT Method"
+            "06 - Safe eBPF 117 Configs - Fallback + Error Handling"
+            "07 - 6.1 eBPF Clean Build - mrproper + All Maps"
+            "08 - 6.1 ARM64 - bpf_override_return + Error Injection"
+            "09 - Full Matrix ARM64 - bpf_override_return + All Maps"
+            "10 - Final Complete eBPF - ARM64 + All Maps + CO-RE"
+          )
+
+          for workflow in "${workflows[@]}"; do
+            echo "===================="
+            echo "Processing: $workflow"
+            echo "===================="
+
+            run_id=$(gh run list --repo ${{ github.repository }} --workflow "$workflow" --limit 1 --json databaseId,conclusion --jq '.[0] | select(.conclusion == "success") | .databaseId' 2>/dev/null || echo "")
+
+            if [ ! -z "$run_id" ]; then
+              echo "✅ Found successful run: $run_id"
+              safe_name=$(echo "$workflow" | sed 's/^[0-9]* - //' | tr ' ' '_' | tr -cd '[:alnum:]_-')
+              mkdir -p "release-artifacts/$safe_name"
+              gh run download $run_id --repo ${{ github.repository }} --dir "release-artifacts/$safe_name" || echo "⚠️ No artifacts"
+            else
+              echo "❌ No successful run found"
+            fi
+          done
+
+          echo ""
+          echo "=== Collected Artifacts ==="
+          ls -la release-artifacts/
+
+      - name: Create comprehensive release notes
+        run: |
+          cat > RELEASE_NOTES.md << 'EOF'
+          # KernelSU eBPF Master Collection - All 10 Build Variants
+
+          ## 📦 Complete Collection Contents
+
+          This release contains all 10 workflow variants with different eBPF configurations:
+
+          ### 🔢 Workflow Variants
+
+          1. **No eBPF - Vanilla Standard** - Standard kernels without eBPF
+          2. **Basic eBPF** - Kprobes + Override + BTF + JIT
+          3. **Full eBPF** - All Maps + Ringbuf + Uprobes + XDP + CO-RE
+          4. **6.1 Only Optimized** - Full eBPF for 6.1 series only
+          5. **Fixed Fragments** - DEFCONFIG_FRAGMENT method
+          6. **Safe eBPF** - 117 configs with fallback mechanism
+          7. **Clean Build** - mrproper + all eBPF features
+          8. **6.1 ARM64** - bpf_override_return() on ARM64
+          9. **Full Matrix ARM64** - ARM64 for all versions
+          10. **Final Complete** - Everything including ARM64
+
+          ## 📊 eBPF Feature Matrix by Build
+
+          | Build # | JIT | BTF | CO-RE | Override | Ringbuf | All Maps | Uprobes | XDP | ARM64 |
+          |---------|-----|-----|-------|----------|---------|----------|---------|-----|-------|
+          | 01 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+          | 02 | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+          | 03 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+          | 04 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+          | 05 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+          | 06 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+          | 07 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+          | 08 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+          | 09 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+          | 10 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+          ## 🔧 Kernel Versions
+
+          **5.15 Series:**
+          - 5.15.164 (2024-11)
+          - 5.15.169 (2025-01)
+
+          **6.1 Series:**
+          - 6.1.102 (2024-10)
+          - 6.1.112 (2024-11)
+          - 6.1.115 (2024-12)
+          - 6.1.119 (2025-01)
+
+          ## 🚀 Key eBPF Features
+
+          - **JIT**: Just-In-Time compilation for BPF programs
+          - **BTF**: BPF Type Format for debugging
+          - **CO-RE**: Compile Once Run Everywhere
+          - **Override**: bpf_override_return() capability
+          - **Ringbuf**: Efficient kernel-userspace data transfer
+          - **All Maps**: Hash, Array, LRU, Stack, Queue, etc.
+          - **Uprobes**: User-space probing
+          - **XDP**: eXpress Data Path for networking
+          - **ARM64**: Error injection support on ARM64
+
+          ## 📝 Installation
+
+          1. Choose the appropriate build variant for your needs
+          2. Download the kernel image for your device version
+          3. Flash using fastboot or custom recovery
+          4. Verify eBPF features: `cat /proc/config.gz | grep BPF`
+
+          ## ⚠️ Important Notes
+
+          - Builds 01-07: Standard x86/ARM support
+          - Builds 08-10: Full ARM64 error injection support
+          - 6.1 series recommended for best eBPF compatibility
+
+          ## 🏗️ Build Information
+
+          - **Date**: $(date -u '+%Y-%m-%d %H:%M UTC')
+          - **Repository**: https://github.com/${{ github.repository }}
+          - **Commit**: ${{ github.sha }}
+          EOF
+
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create the release
+          gh release create "${{ inputs.release_tag }}" \
+            --repo ${{ github.repository }} \
+            --title "${{ inputs.release_name }}" \
+            --notes-file RELEASE_NOTES.md \
+            --draft
+
+          # Create archives and upload
+          cd release-artifacts
+          for dir in */; do
+            if [ -d "$dir" ]; then
+              echo "Creating archive for $dir"
+              tar czf "${dir%/}.tar.gz" "$dir"
+              gh release upload "${{ inputs.release_tag }}" \
+                --repo ${{ github.repository }} \
+                "${dir%/}.tar.gz" || echo "Failed to upload ${dir%/}.tar.gz"
+            fi
+          done
+
+          # Publish the release
+          gh release edit "${{ inputs.release_tag }}" \
+            --repo ${{ github.repository }} \
+            --draft=false
+
+          echo ""
+          echo "✅ Release created successfully!"
+          echo "📦 View at: https://github.com/${{ github.repository }}/releases/tag/${{ inputs.release_tag }}"
