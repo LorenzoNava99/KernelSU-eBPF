@@ -1,0 +1,197 @@
+# Enhanced eBPF Configuration for Android
+# Safe additions that improve eBPF capabilities without breaking Android
+
+# ============================================
+# CORE BPF SUPPORT (ESSENTIAL)
+# ============================================
+CONFIG_BPF=y
+CONFIG_BPF_SYSCALL=y
+CONFIG_BPF_JIT=y
+CONFIG_BPF_JIT_ALWAYS_ON=y
+CONFIG_HAVE_EBPF_JIT=y
+
+# ============================================
+# BPF OVERRIDE & ERROR INJECTION
+# ============================================
+# Enable bpf_override_return() functionality
+CONFIG_BPF_EVENTS=y
+CONFIG_FUNCTION_ERROR_INJECTION=y
+CONFIG_BPF_KPROBE_OVERRIDE=y
+
+# ============================================
+# ENHANCED TRACING CAPABILITIES
+# ============================================
+# Kprobes and uprobes for comprehensive tracing
+CONFIG_KPROBES=y
+CONFIG_KRETPROBES=y
+CONFIG_KPROBE_EVENTS=y
+CONFIG_UPROBE_EVENTS=y
+CONFIG_UPROBES=y
+CONFIG_KPROBES_ON_FTRACE=y
+CONFIG_HAVE_KPROBES_ON_FTRACE=y
+
+# Function graph tracer for call chain analysis
+CONFIG_FTRACE=y
+CONFIG_DYNAMIC_FTRACE=y
+CONFIG_FUNCTION_TRACER=y
+CONFIG_FUNCTION_GRAPH_TRACER=y
+CONFIG_HAVE_FUNCTION_GRAPH_TRACER=y
+CONFIG_DYNAMIC_FTRACE_WITH_REGS=y
+CONFIG_HAVE_DYNAMIC_FTRACE_WITH_REGS=y
+
+# Syscall tracing
+CONFIG_FTRACE_SYSCALLS=y
+CONFIG_HAVE_SYSCALL_TRACEPOINTS=y
+
+# ============================================
+# BPF PROGRAM TYPES & ATTACH POINTS
+# ============================================
+# Network programs
+CONFIG_BPF_STREAM_PARSER=y
+CONFIG_NET_CLS_BPF=y
+CONFIG_NET_ACT_BPF=y
+CONFIG_XDP_SOCKETS=y
+CONFIG_BPF_LIRC_MODE2=y
+
+# Cgroup BPF programs
+CONFIG_CGROUP_BPF=y
+CONFIG_SOCK_CGROUP_DATA=y
+
+# Security programs (LSM)
+CONFIG_BPF_LSM=y
+CONFIG_SECURITY=y
+CONFIG_SECURITYFS=y
+
+# Raw tracepoint programs
+CONFIG_RAW_TRACEPOINT=y
+
+# ============================================
+# BPF MAPS & DATA STRUCTURES
+# ============================================
+# Enable all map types
+CONFIG_BPF_MAP_TYPE_ARRAY=y
+CONFIG_BPF_MAP_TYPE_PERCPU_ARRAY=y
+CONFIG_BPF_MAP_TYPE_HASH=y
+CONFIG_BPF_MAP_TYPE_PERCPU_HASH=y
+CONFIG_BPF_MAP_TYPE_LRU_HASH=y
+CONFIG_BPF_MAP_TYPE_LPM_TRIE=y
+CONFIG_BPF_MAP_TYPE_STACK_TRACE=y
+CONFIG_BPF_MAP_TYPE_CGROUP_ARRAY=y
+CONFIG_BPF_MAP_TYPE_DEVMAP=y
+CONFIG_BPF_MAP_TYPE_SOCKMAP=y
+CONFIG_BPF_MAP_TYPE_CPUMAP=y
+CONFIG_BPF_MAP_TYPE_XSKMAP=y
+CONFIG_BPF_MAP_TYPE_SOCKHASH=y
+CONFIG_BPF_MAP_TYPE_QUEUE=y
+CONFIG_BPF_MAP_TYPE_STACK=y
+CONFIG_BPF_MAP_TYPE_RINGBUF=y
+
+# ============================================
+# BTF (BPF Type Format) SUPPORT
+# ============================================
+CONFIG_DEBUG_INFO_BTF=y
+CONFIG_DEBUG_INFO_BTF_MODULES=y
+CONFIG_BPF_CO_RE=y
+CONFIG_PAHOLE_HAS_SPLIT_BTF=y
+CONFIG_PAHOLE_HAS_BTF_TAG=y
+
+# ============================================
+# PERFORMANCE & OBSERVABILITY
+# ============================================
+CONFIG_PERF_EVENTS=y
+CONFIG_HW_PERF_EVENTS=y
+CONFIG_PERF_USE_VMALLOC=y
+
+# Stack trace support
+CONFIG_STACKTRACE=y
+CONFIG_STACKTRACE_SUPPORT=y
+CONFIG_USER_STACKTRACE_SUPPORT=y
+
+# Profiling support
+CONFIG_PROFILING=y
+CONFIG_TRACEPOINTS=y
+CONFIG_EVENT_TRACING=y
+CONFIG_NOP_TRACER=y
+CONFIG_RING_BUFFER=y
+CONFIG_TRACE_CLOCK=y
+
+# ============================================
+# SAFETY & SECURITY FEATURES
+# ============================================
+# Prevent unprivileged BPF by default (can be enabled via sysctl)
+CONFIG_BPF_UNPRIV_DEFAULT_OFF=y
+
+# BPF signing for production (optional, comment out if causes issues)
+# CONFIG_BPF_SIGN=y
+
+# Preload BPF programs
+CONFIG_BPF_PRELOAD=y
+CONFIG_BPF_PRELOAD_UMD=y
+
+# ============================================
+# ANDROID-SPECIFIC OPTIMIZATIONS
+# ============================================
+# Android binder tracing
+CONFIG_ANDROID_BINDER_IPC=y
+CONFIG_ANDROID_BINDERFS=y
+
+# Memory management helpers
+CONFIG_MEMCG=y
+CONFIG_MEMCG_KMEM=y
+
+# CPU accounting for BPF
+CONFIG_CGROUP_CPUACCT=y
+CONFIG_CGROUP_SCHED=y
+
+# ============================================
+# NETWORKING ENHANCEMENTS (for eBPF)
+# ============================================
+CONFIG_NET=y
+CONFIG_INET=y
+CONFIG_NET_SCHED=y
+CONFIG_NET_CLS=y
+CONFIG_NET_CLS_ACT=y
+CONFIG_NET_SCH_INGRESS=y
+CONFIG_NET_EGRESS=y
+
+# TC (Traffic Control) BPF
+CONFIG_NET_CLS_BPF=y
+CONFIG_NET_ACT_BPF=y
+
+# Socket filtering
+CONFIG_FILTER=y
+CONFIG_HAVE_BPF_FILTER=y
+
+# ============================================
+# ADDITIONAL HELPERS & FEATURES
+# ============================================
+# Enable all BPF helpers
+CONFIG_BPF_HELPER_OVERRIDE_RETURN=y
+CONFIG_BPF_HELPER_GET_CURRENT_TASK=y
+CONFIG_BPF_HELPER_GET_CURRENT_PID_TGID=y
+CONFIG_BPF_HELPER_GET_CURRENT_UID_GID=y
+CONFIG_BPF_HELPER_GET_CURRENT_COMM=y
+
+# Task struct access
+CONFIG_HAVE_ARCH_TRACEHOOK=y
+CONFIG_HAVE_ARCH_TASK_STRUCT=y
+
+# ============================================
+# DEBUGGING SUPPORT (Optional)
+# ============================================
+CONFIG_DEBUG_INFO=y
+CONFIG_DEBUG_INFO_DWARF4=y
+CONFIG_DEBUG_INFO_REDUCED=n
+CONFIG_DEBUG_FS=y
+
+# BPF debugging
+CONFIG_BPF_DEBUG=y
+CONFIG_BPF_STATS=y
+
+# ============================================
+# COMPATIBILITY FLAGS
+# ============================================
+# Ensure Android compatibility
+CONFIG_ANDROID=y
+CONFIG_ASHMEM=y
+CONFIG_STAGING=y
