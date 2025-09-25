@@ -22,16 +22,16 @@ jobs:
     strategy:
       matrix:
         include:
-          # Latest stable versions with eBPF support
+          # Only 6.1.1x versions with eBPF support
+          - version: "6.1"
+            sub_level: 112
+            os_patch_level: 2024-11
           - version: "6.1"
             sub_level: 115
             os_patch_level: 2024-12
           - version: "6.1"
             sub_level: 118
             os_patch_level: 2025-01
-          - version: "6.1"
-            sub_level: 128
-            os_patch_level: 2025-03
     uses: ./.github/workflows/gki-kernel-ebpf.yml
     secrets: inherit
     with:
