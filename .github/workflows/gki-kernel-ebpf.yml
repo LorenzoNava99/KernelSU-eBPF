@@ -210,23 +210,6 @@ jobs:
           # Ensure eBPF configs are applied
           echo "[+] Verifying eBPF configuration in build"
 
-          # Set error handling for config issues
-          set +e  # Continue even if some configs fail
-
-          # Pre-check for config compatibility
-          echo "[+] Checking config compatibility..."
-          cd common
-          make ARCH=arm64 defconfig 2>&1 | tee config_check.log
-
-          # Check for config errors but continue build
-          if grep -q "ERROR\|error" config_check.log; then
-            echo "[!] Warning: Some configs may not be supported, continuing build..."
-            echo "[!] Unsupported configs will be automatically disabled"
-          fi
-
-          cd ..
-          set -e  # Re-enable error checking for build
-
           echo "[+] Starting kernel build with safe eBPF features..."
           if [ -e build/build.sh ]; then
             LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh CC="/usr/bin/ccache clang" || {
@@ -236,10 +219,13 @@ jobs:
               LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh CC="/usr/bin/ccache clang"
             }
           else
-            tools/bazel run --disk_cache=/home/runner/.cache/bazel --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist || {
+            # Clean any previous build artifacts first
+            cd common && make mrproper 2>/dev/null || true && cd ..
+            tools/bazel run --verbose_failures --disk_cache=/home/runner/.cache/bazel --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist || {
               echo "[!] Build failed, retrying without problematic configs..."
               cp $GITHUB_WORKSPACE/KernelSU/kernel/ebpf_enhanced_config.fragment common/arch/arm64/configs/ebpf_config.fragment
-              tools/bazel run --disk_cache=/home/runner/.cache/bazel --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist
+              cd common && make mrproper 2>/dev/null || true && cd ..
+              tools/bazel run --verbose_failures --disk_cache=/home/runner/.cache/bazel --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist
             }
           fi
 
