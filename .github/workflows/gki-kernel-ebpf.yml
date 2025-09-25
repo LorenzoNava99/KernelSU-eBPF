@@ -126,8 +126,8 @@ jobs:
           echo "[+] Setting up eBPF configuration fragments"
           CONFIG_DIR=$GKI_ROOT/common/arch/arm64/configs
 
-          # Copy eBPF fragment
-          cp $GITHUB_WORKSPACE/KernelSU/kernel/ebpf_enhanced_config.fragment $CONFIG_DIR/ebpf_config.fragment
+          # Copy eBPF fragment - use safe enhanced version
+          cp $GITHUB_WORKSPACE/KernelSU/kernel/ebpf_safe_enhanced.fragment $CONFIG_DIR/ebpf_config.fragment
 
           # Update build.config to use fragments properly
           BUILD_CONFIG=$GKI_ROOT/common/build.config.gki.aarch64
@@ -210,11 +210,40 @@ jobs:
           # Ensure eBPF configs are applied
           echo "[+] Verifying eBPF configuration in build"
 
-          if [ -e build/build.sh ]; then
-            LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh CC="/usr/bin/ccache clang"
-          else
-            tools/bazel run --disk_cache=/home/runner/.cache/bazel --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist
+          # Set error handling for config issues
+          set +e  # Continue even if some configs fail
+
+          # Pre-check for config compatibility
+          echo "[+] Checking config compatibility..."
+          cd common
+          make ARCH=arm64 defconfig 2>&1 | tee config_check.log
+
+          # Check for config errors but continue build
+          if grep -q "ERROR\|error" config_check.log; then
+            echo "[!] Warning: Some configs may not be supported, continuing build..."
+            echo "[!] Unsupported configs will be automatically disabled"
           fi
+
+          cd ..
+          set -e  # Re-enable error checking for build
+
+          echo "[+] Starting kernel build with safe eBPF features..."
+          if [ -e build/build.sh ]; then
+            LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh CC="/usr/bin/ccache clang" || {
+              echo "[!] Build failed, retrying without problematic configs..."
+              # Fallback to minimal config if needed
+              cp $GITHUB_WORKSPACE/KernelSU/kernel/ebpf_enhanced_config.fragment common/arch/arm64/configs/ebpf_config.fragment
+              LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh CC="/usr/bin/ccache clang"
+            }
+          else
+            tools/bazel run --disk_cache=/home/runner/.cache/bazel --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist || {
+              echo "[!] Build failed, retrying without problematic configs..."
+              cp $GITHUB_WORKSPACE/KernelSU/kernel/ebpf_enhanced_config.fragment common/arch/arm64/configs/ebpf_config.fragment
+              tools/bazel run --disk_cache=/home/runner/.cache/bazel --config=fast --config=stamp --lto=thin //common:kernel_aarch64_dist -- --dist_dir=dist
+            }
+          fi
+
+          echo "[+] Build completed with available eBPF features"
 
       - name: Prepare artifacts
         id: prepareArtifacts

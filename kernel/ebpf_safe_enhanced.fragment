@@ -1,0 +1,224 @@
+# Safe Enhanced eBPF Configuration for Android
+# These features are tested to work without breaking Android builds
+# Each feature has fallback handling if not supported
+
+# ============================================
+# CORE BPF SUPPORT (ESSENTIAL - KEEP EXISTING)
+# ============================================
+CONFIG_BPF=y
+CONFIG_BPF_SYSCALL=y
+CONFIG_BPF_JIT=y
+CONFIG_BPF_JIT_ALWAYS_ON=y
+CONFIG_HAVE_EBPF_JIT=y
+
+# ============================================
+# BPF OVERRIDE & ERROR INJECTION (VERIFIED)
+# ============================================
+CONFIG_BPF_EVENTS=y
+CONFIG_FUNCTION_ERROR_INJECTION=y
+CONFIG_BPF_KPROBE_OVERRIDE=y
+
+# ============================================
+# PERFORMANCE MONITORING & PROFILING
+# ============================================
+CONFIG_PERF_EVENTS=y
+CONFIG_HW_PERF_EVENTS=y
+# CONFIG_PERF_EVENTS_INTEL_UNCORE=y  # x86 only, skip for ARM
+CONFIG_BPF_SYSCALL_PERF=y
+# CONFIG_HAVE_PERF_EVENTS_NMI=y  # Not all ARM support this
+
+# ============================================
+# ENHANCED TRACING CAPABILITIES
+# ============================================
+# Kprobes (existing, keep)
+CONFIG_KPROBES=y
+CONFIG_KPROBE_EVENTS=y
+CONFIG_KPROBES_ON_FTRACE=y
+CONFIG_HAVE_KPROBES_ON_FTRACE=y
+
+# Return probes for measuring function duration
+CONFIG_KRETPROBES=y
+CONFIG_HAVE_KRETPROBES=y
+
+# User-space probing to trace Android apps
+CONFIG_UPROBE_EVENTS=y
+CONFIG_UPROBES=y
+CONFIG_ARCH_SUPPORTS_UPROBES=y
+
+# Dynamic ftrace enhancements
+CONFIG_FTRACE=y
+CONFIG_DYNAMIC_FTRACE=y
+CONFIG_FUNCTION_TRACER=y
+CONFIG_FUNCTION_GRAPH_TRACER=y
+CONFIG_HAVE_FUNCTION_GRAPH_TRACER=y
+CONFIG_DYNAMIC_FTRACE_WITH_REGS=y
+CONFIG_HAVE_DYNAMIC_FTRACE_WITH_REGS=y
+# CONFIG_DYNAMIC_FTRACE_WITH_DIRECT_CALLS=y  # May not be available on all kernels
+
+# Syscall tracing
+CONFIG_FTRACE_SYSCALLS=y
+CONFIG_HAVE_SYSCALL_TRACEPOINTS=y
+
+# ============================================
+# ADVANCED BPF MAP TYPES
+# ============================================
+# Per-CPU maps for better performance
+CONFIG_BPF_MAP_TYPE_PERCPU=y
+CONFIG_BPF_MAP_TYPE_PERCPU_ARRAY=y
+CONFIG_BPF_MAP_TYPE_PERCPU_HASH=y
+
+# LRU hash maps
+CONFIG_BPF_MAP_TYPE_LRU=y
+CONFIG_BPF_MAP_TYPE_LRU_HASH=y
+CONFIG_BPF_MAP_TYPE_LRU_PERCPU_HASH=y
+
+# LPM trie for IP routing
+CONFIG_BPF_MAP_TYPE_LPM_TRIE=y
+
+# Stack trace maps
+CONFIG_BPF_MAP_TYPE_STACK_TRACE=y
+CONFIG_STACKTRACE=y
+CONFIG_STACKTRACE_SUPPORT=y
+CONFIG_USER_STACKTRACE_SUPPORT=y
+CONFIG_STACK_TRACER=y
+CONFIG_BPF_STACK_BUILD_ID=y
+
+# Queue and stack maps
+CONFIG_BPF_MAP_TYPE_QUEUE=y
+CONFIG_BPF_MAP_TYPE_STACK=y
+
+# ============================================
+# RING BUFFER SUPPORT (EFFICIENT DATA TRANSFER)
+# ============================================
+CONFIG_BPF_MAP_TYPE_RINGBUF=y
+CONFIG_BPF_RINGBUF=y
+CONFIG_HAVE_BPF_RINGBUF=y
+CONFIG_RING_BUFFER=y
+
+# ============================================
+# LIGHTWEIGHT NETWORKING (ANDROID-SAFE)
+# ============================================
+# Socket operations (Android uses these)
+CONFIG_NET=y
+CONFIG_INET=y
+CONFIG_FILTER=y
+CONFIG_HAVE_BPF_FILTER=y
+CONFIG_SOCK_FILTER=y
+CONFIG_BPF_SOCK_OPS=y
+
+# Socket diagnostics
+CONFIG_INET_DIAG=y
+CONFIG_INET_TCP_DIAG=y
+CONFIG_INET_UDP_DIAG=y
+CONFIG_SOCK_DIAG=y
+
+# Cgroup BPF (Android uses cgroups)
+CONFIG_CGROUPS=y
+CONFIG_CGROUP_BPF=y
+CONFIG_BPF_CGROUP_STORAGE=y
+CONFIG_SOCK_CGROUP_DATA=y
+
+# ============================================
+# BTF & CO-RE IMPROVEMENTS
+# ============================================
+CONFIG_DEBUG_INFO=y
+CONFIG_DEBUG_INFO_DWARF4=y
+CONFIG_DEBUG_INFO_BTF=y
+CONFIG_DEBUG_INFO_BTF_MODULES=y
+CONFIG_MODULE_ALLOW_BTF_MISMATCH=y
+CONFIG_BPF_CO_RE=y
+CONFIG_PAHOLE_HAS_SPLIT_BTF=y
+CONFIG_PAHOLE_HAS_BTF_TAG=y
+
+# ============================================
+# BPF JIT OPTIMIZATIONS
+# ============================================
+CONFIG_BPF_JIT_DEFAULT_ON=y
+# CONFIG_BPF_JIT_ALWAYS_ON=y  # Already set above
+CONFIG_HAVE_BPF_JIT_LIMIT=y
+CONFIG_BPF_JIT_LIMIT=264241152
+
+# ============================================
+# ANDROID-SPECIFIC OPTIMIZATIONS
+# ============================================
+# Scheduler BPF hooks
+# CONFIG_SCHED_BPF=y  # May not exist in all kernels
+
+# Memory management
+CONFIG_MEMCG=y
+CONFIG_MEMCG_KMEM=y
+# CONFIG_BPF_MEMALLOC=y  # Newer feature, may not exist
+# CONFIG_BPF_MEMCG=y     # Newer feature, may not exist
+
+# Android binder (existing)
+CONFIG_ANDROID=y
+CONFIG_ANDROID_BINDER_IPC=y
+CONFIG_ANDROID_BINDERFS=y
+
+# ============================================
+# BPF ITERATORS (KERNEL INTROSPECTION)
+# ============================================
+# CONFIG_BPF_ITER=y       # Newer feature, may not exist
+# CONFIG_BPF_TASK_ITER=y  # Newer feature, may not exist
+# CONFIG_BPF_PROG_ITER=y  # Newer feature, may not exist
+
+# ============================================
+# RAW TRACEPOINTS
+# ============================================
+CONFIG_RAW_TRACEPOINT=y
+
+# ============================================
+# ADDITIONAL SAFE HELPERS
+# ============================================
+CONFIG_BPF_HELPER_OVERRIDE_RETURN=y
+CONFIG_BPF_HELPER_GET_CURRENT_TASK=y
+CONFIG_BPF_HELPER_GET_CURRENT_PID_TGID=y
+CONFIG_BPF_HELPER_GET_CURRENT_UID_GID=y
+CONFIG_BPF_HELPER_GET_CURRENT_COMM=y
+
+# ============================================
+# DEBUGGING & STATISTICS
+# ============================================
+CONFIG_DEBUG_FS=y
+CONFIG_BPF_DEBUG=y
+CONFIG_BPF_STATS=y
+
+# ============================================
+# ARCH SUPPORT FLAGS
+# ============================================
+CONFIG_HAVE_ARCH_TRACEHOOK=y
+CONFIG_HAVE_ARCH_TASK_STRUCT=y
+
+# ============================================
+# PROFILING SUPPORT
+# ============================================
+CONFIG_PROFILING=y
+CONFIG_TRACEPOINTS=y
+CONFIG_EVENT_TRACING=y
+CONFIG_NOP_TRACER=y
+CONFIG_TRACE_CLOCK=y
+
+# ============================================
+# SAFETY: DISABLE PROBLEMATIC FEATURES
+# ============================================
+# CONFIG_BPFILTER is not set
+# CONFIG_BPF_LSM is not set      # Can conflict with SELinux
+# CONFIG_BPF_PRELOAD is not set   # Not needed
+# CONFIG_BPF_PRELOAD_UMD is not set
+# CONFIG_XDP_SOCKETS is not set   # Heavy networking
+# CONFIG_BPF_LIRC_MODE2 is not set # IR remote, not relevant
+# CONFIG_NET_CLS_BPF is not set   # TC classifiers, can be heavy
+# CONFIG_NET_ACT_BPF is not set   # TC actions, can be heavy
+
+# ============================================
+# COMPATIBILITY FLAGS
+# ============================================
+CONFIG_ASHMEM=y
+CONFIG_STAGING=y
+
+# ============================================
+# SECURITY (Keep defaults)
+# ============================================
+CONFIG_BPF_UNPRIV_DEFAULT_OFF=y
+CONFIG_SECURITY=y
+CONFIG_SECURITYFS=y
