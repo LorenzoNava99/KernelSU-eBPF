@@ -41,7 +41,7 @@ on:
       embed_ksud:
         required: false
         type: string
-        default: ksud-aarch64-linux-android
+        default: ""
         description: >
           Artifact name of prebuilt ksud to be embedded
           for example: ksud-aarch64-linux-android
@@ -181,30 +181,16 @@ jobs:
             fi
           done
 
-      - name: Setup for Prebuilt KSUD
-        if: ${{ inputs.embed_ksud != '' && github.event.pull_request.draft != true }}
+      - name: Setup for KSUD placeholder
         run: |
-          cd android-kernel
-          rm -rf $GITHUB_WORKSPACE/KernelSU/userspace/ksud/ksud
-          mkdir -p $GITHUB_WORKSPACE/KernelSU/userspace/ksud/ksud/aarch64
-          mkdir -p $GITHUB_WORKSPACE/KernelSU/userspace/ksud/ksud/x86_64
-
-      - name: Setup for Prebuilt KSUD (PR)
-        if: ${{ inputs.embed_ksud != '' && github.event.pull_request.draft == true }}
-        run: |
+          # Create placeholder ksud files for build compatibility
           cd android-kernel
           rm -rf $GITHUB_WORKSPACE/KernelSU/userspace/ksud/ksud
           mkdir -p $GITHUB_WORKSPACE/KernelSU/userspace/ksud/ksud/aarch64
           touch $GITHUB_WORKSPACE/KernelSU/userspace/ksud/ksud/aarch64/ksud
           mkdir -p $GITHUB_WORKSPACE/KernelSU/userspace/ksud/ksud/x86_64
           touch $GITHUB_WORKSPACE/KernelSU/userspace/ksud/ksud/x86_64/ksud
-
-      - name: Download Prebuilt KSUD
-        if: ${{ inputs.embed_ksud != '' && github.event.pull_request.draft != true }}
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.embed_ksud }}
-          path: ${{ github.workspace }}/KernelSU/userspace/ksud/ksud/aarch64/
+          echo "[+] Created placeholder ksud files for eBPF build"
 
       - name: Prepare Signing Kernel
         working-directory: android-kernel
