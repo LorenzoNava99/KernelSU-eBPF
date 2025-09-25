@@ -1,0 +1,47 @@
+# eBPF Override Support Configuration
+# Enable bpf_override_return() functionality on Android
+
+# Core BPF support
+CONFIG_BPF=y
+CONFIG_BPF_SYSCALL=y
+CONFIG_BPF_JIT=y
+CONFIG_BPF_JIT_ALWAYS_ON=y
+
+# Enable BPF events (prerequisite for KPROBE_OVERRIDE)
+CONFIG_BPF_EVENTS=y
+
+# Enable kprobes and kretprobes
+CONFIG_KPROBES=y
+CONFIG_KRETPROBES=y
+CONFIG_KPROBE_EVENTS=y
+
+# Function error injection support (prerequisite for KPROBE_OVERRIDE)
+CONFIG_FUNCTION_ERROR_INJECTION=y
+
+# Enable BPF kprobe override - this enables bpf_override_return()
+CONFIG_BPF_KPROBE_OVERRIDE=y
+
+# Additional BPF features for Android
+CONFIG_HAVE_EBPF_JIT=y
+CONFIG_BPF_STREAM_PARSER=y
+CONFIG_BPF_LIRC_MODE2=y
+CONFIG_NET_CLS_BPF=y
+CONFIG_NET_ACT_BPF=y
+CONFIG_BPF_LSM=y
+CONFIG_DEBUG_INFO_BTF=y
+CONFIG_DEBUG_INFO_BTF_MODULES=y
+
+# Tracing support
+CONFIG_FTRACE=y
+CONFIG_DYNAMIC_FTRACE=y
+CONFIG_FUNCTION_TRACER=y
+CONFIG_HAVE_DYNAMIC_FTRACE=y
+
+# Performance events
+CONFIG_PERF_EVENTS=y
+CONFIG_HW_PERF_EVENTS=y
+
+# Required for Android eBPF programs
+CONFIG_CGROUP_BPF=y
+CONFIG_BPF_UNPRIV_DEFAULT_OFF=y
+CONFIG_BPF_PRELOAD=y
