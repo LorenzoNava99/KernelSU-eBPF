@@ -1,4 +1,4 @@
-name: GKI Kernel Build with eBPF
+name: GKI eBPF Template - Full Stack (BTF+CO-RE+Override+Ringbuf+ARM64)
 
 on:
   workflow_call:
@@ -65,7 +65,7 @@ on:
 
 jobs:
   build:
-    name: Build ${{ inputs.version_name }} with eBPF
+    name: Build ${{ inputs.version_name }} [eBPF+BTF+Override+Kretprobes+RingBuf]
     runs-on: ubuntu-latest
     env:
       CCACHE_COMPILERCHECK: "%compiler% -dumpmachine; %compiler% -dumpversion"

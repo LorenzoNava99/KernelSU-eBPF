@@ -1,4 +1,4 @@
-name: Build Kernel - Android 14 with eBPF
+name: Android 14 - eBPF Enhanced (BTF+CO-RE+Override+Ringbuf+Perf)
 on:
   workflow_dispatch:
   push:

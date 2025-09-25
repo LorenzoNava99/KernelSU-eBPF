@@ -1,4 +1,4 @@
-name: Build Kernel - Android 14
+name: Android 14 - Standard Build (No eBPF)
 on:
   workflow_dispatch:
   push:

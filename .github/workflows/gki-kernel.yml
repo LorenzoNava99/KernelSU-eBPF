@@ -1,4 +1,4 @@
-name: GKI Kernel Build
+name: GKI Base Template - Standard (No eBPF)
 
 on:
   workflow_call:

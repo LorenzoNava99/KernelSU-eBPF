@@ -1,4 +1,4 @@
-name: Build Android 6.1.1x Kernels with Enhanced eBPF
+name: Android 14 (6.1.1x) - eBPF Optimized (BTF+Override+AllMaps)
 on:
   workflow_dispatch:
   push:
