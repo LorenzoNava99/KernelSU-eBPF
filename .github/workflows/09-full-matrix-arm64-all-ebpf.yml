@@ -1,0 +1,43 @@
+name: 09 - Full Matrix ARM64 - bpf_override_return + All Maps
+
+# Recreates the original Run 18019071550
+# Same ARM64 error injection as #8 but for ALL kernel versions
+# Full Android 14 matrix (5.15 and 6.1 series)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-full-arm64:
+    strategy:
+      matrix:
+        include:
+          # 5.15 series with ARM64
+          - version: "5.15"
+            sub_level: 164
+            os_patch_level: 2024-11
+          - version: "5.15"
+            sub_level: 169
+            os_patch_level: 2025-01
+          # 6.1 series with ARM64
+          - version: "6.1"
+            sub_level: 102
+            os_patch_level: 2024-10
+          - version: "6.1"
+            sub_level: 112
+            os_patch_level: 2024-11
+          - version: "6.1"
+            sub_level: 115
+            os_patch_level: 2024-12
+          - version: "6.1"
+            sub_level: 119
+            os_patch_level: 2025-01
+
+    uses: ./.github/workflows/gki-kernel-ebpf.yml
+    secrets: inherit
+    with:
+      version: android14-${{ matrix.version }}
+      version_name: android14-${{ matrix.version }}.${{ matrix.sub_level }}
+      tag: android14-${{ matrix.version }}-${{ matrix.os_patch_level }}
+      os_patch_level: ${{ matrix.os_patch_level }}
+      patch_path: ${{ matrix.version }}

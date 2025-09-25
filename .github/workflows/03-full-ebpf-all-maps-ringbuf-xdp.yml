@@ -1,0 +1,57 @@
+name: 03 - Full eBPF - All Maps + Ringbuf + Uprobes + XDP + CO-RE
+
+# Recreates the original Run 18014030888
+# Comprehensive eBPF with 100+ configs including:
+# - All BPF map types (hash, array, percpu, LRU, LPM trie, stack trace, queue, sockmap, xskmap, ringbuf)
+# - CO-RE support
+# - Ring buffers
+# - Uprobes
+# - XDP sockets
+# - Cgroup BPF
+# - Performance events
+# - BPF preload
+# - BPF stats
+# - Android binder tracing
+# - Full ftrace capabilities
+# - Network TC/XDP/ingress/egress
+# - Security LSM hooks
+# - Raw tracepoints
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-full-ebpf:
+    strategy:
+      matrix:
+        include:
+          # 5.15 series - using available branches
+          - version: "5.15"
+            sub_level: 164
+            os_patch_level: 2024-11
+          - version: "5.15"
+            sub_level: 169
+            os_patch_level: 2025-01
+
+          # 6.1 series - all branches exist
+          - version: "6.1"
+            sub_level: 102
+            os_patch_level: 2024-10
+          - version: "6.1"
+            sub_level: 112
+            os_patch_level: 2024-11
+          - version: "6.1"
+            sub_level: 115
+            os_patch_level: 2024-12
+          - version: "6.1"
+            sub_level: 119
+            os_patch_level: 2025-01
+
+    uses: ./.github/workflows/gki-kernel-ebpf.yml
+    secrets: inherit
+    with:
+      version: android14-${{ matrix.version }}
+      version_name: android14-${{ matrix.version }}.${{ matrix.sub_level }}
+      tag: android14-${{ matrix.version }}-${{ matrix.os_patch_level }}
+      os_patch_level: ${{ matrix.os_patch_level }}
+      patch_path: ${{ matrix.version }}

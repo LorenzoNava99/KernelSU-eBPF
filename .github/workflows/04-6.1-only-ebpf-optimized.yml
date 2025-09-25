@@ -1,0 +1,33 @@
+name: 04 - 6.1 Only - Full eBPF Optimized Build
+
+# Recreates the original Run 18014848632
+# Same comprehensive eBPF as #3 but only for 6.1.1x kernels
+# Build matrix reduced for faster builds
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-6-1-only:
+    strategy:
+      matrix:
+        include:
+          # Only 6.1.1x versions
+          - version: "6.1"
+            sub_level: 112
+            os_patch_level: 2024-11
+          - version: "6.1"
+            sub_level: 115
+            os_patch_level: 2024-12
+          - version: "6.1"
+            sub_level: 119
+            os_patch_level: 2025-01
+
+    uses: ./.github/workflows/gki-kernel-ebpf.yml
+    secrets: inherit
+    with:
+      version: android14-${{ matrix.version }}
+      version_name: android14-${{ matrix.version }}.${{ matrix.sub_level }}
+      tag: android14-${{ matrix.version }}-${{ matrix.os_patch_level }}
+      os_patch_level: ${{ matrix.os_patch_level }}
+      patch_path: ${{ matrix.version }}
