@@ -1,0 +1,249 @@
+name: Create eBPF Mega Release - All Kernels Collection
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_name:
+        description: 'Release name'
+        required: true
+        default: 'KernelSU eBPF Complete Collection'
+      release_tag:
+        description: 'Release tag'
+        required: true
+        default: 'ebpf-collection-v1.0'
+
+jobs:
+  wait-for-builds:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for all workflows to complete
+        run: |
+          echo "Waiting for all eBPF workflow runs to complete..."
+
+          # List of workflow names to wait for
+          workflows=(
+            "No eBPF - Vanilla Kernel Build"
+            "Kprobes + Override + BTF + JIT - Basic eBPF"
+            "Full eBPF - All Maps + Ringbuf + Uprobes + XDP + CO-RE"
+            "6.1.1x Only - Full eBPF All Maps + Ringbuf + CO-RE"
+            "6.1.1x eBPF Fixed Fragments - All Maps + CO-RE + DEFCONFIG_FRAGMENT"
+            "Safe eBPF 117 Configs - All Maps + Fallback + Error Handling"
+            "6.1.1x eBPF Clean Build - mrproper + All Maps + CO-RE"
+            "6.1.1x ARM64 - bpf_override_return + Error Injection + All eBPF"
+            "Full Matrix ARM64 - bpf_override_return + All Maps + XDP"
+            "6.1.1x Final - Complete eBPF + ARM64 + All Maps + CO-RE"
+          )
+
+          # Wait up to 4 hours for builds to complete
+          max_wait=14400
+          elapsed=0
+          sleep_interval=60
+
+          while [ $elapsed -lt $max_wait ]; do
+            all_done=true
+
+            for workflow in "${workflows[@]}"; do
+              status=$(gh run list --repo ${{ github.repository }} --workflow "$workflow" --limit 1 --json status --jq '.[0].status')
+              if [ "$status" != "completed" ]; then
+                echo "Workflow '$workflow' is still $status"
+                all_done=false
+              fi
+            done
+
+            if [ "$all_done" = true ]; then
+              echo "All workflows completed!"
+              break
+            fi
+
+            echo "Waiting... ($elapsed seconds elapsed)"
+            sleep $sleep_interval
+            elapsed=$((elapsed + sleep_interval))
+          done
+
+  collect-artifacts:
+    needs: wait-for-builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create artifacts directory
+        run: mkdir -p release-artifacts
+
+      - name: Download all artifacts
+        run: |
+          echo "Downloading artifacts from all workflow runs..."
+
+          # Get run IDs for each workflow
+          workflows=(
+            "No eBPF - Vanilla Kernel Build"
+            "Kprobes + Override + BTF + JIT - Basic eBPF"
+            "Full eBPF - All Maps + Ringbuf + Uprobes + XDP + CO-RE"
+            "6.1.1x Only - Full eBPF All Maps + Ringbuf + CO-RE"
+            "6.1.1x eBPF Fixed Fragments - All Maps + CO-RE + DEFCONFIG_FRAGMENT"
+            "Safe eBPF 117 Configs - All Maps + Fallback + Error Handling"
+            "6.1.1x eBPF Clean Build - mrproper + All Maps + CO-RE"
+            "6.1.1x ARM64 - bpf_override_return + Error Injection + All eBPF"
+            "Full Matrix ARM64 - bpf_override_return + All Maps + XDP"
+            "6.1.1x Final - Complete eBPF + ARM64 + All Maps + CO-RE"
+          )
+
+          for workflow in "${workflows[@]}"; do
+            echo "Processing workflow: $workflow"
+
+            # Get the latest run ID
+            run_id=$(gh run list --repo ${{ github.repository }} --workflow "$workflow" --limit 1 --json databaseId --jq '.[0].databaseId')
+
+            if [ ! -z "$run_id" ]; then
+              echo "Downloading artifacts from run $run_id"
+
+              # Create directory for this workflow's artifacts
+              safe_name=$(echo "$workflow" | tr ' ' '_' | tr -cd '[:alnum:]_-')
+              mkdir -p "release-artifacts/$safe_name"
+
+              # Download artifacts
+              gh run download $run_id --repo ${{ github.repository }} --dir "release-artifacts/$safe_name" || true
+            fi
+          done
+
+      - name: Create release notes
+        run: |
+          cat > RELEASE_NOTES.md << 'EOF'
+          # KernelSU eBPF Complete Collection
+
+          ## 📦 Contents
+
+          This release contains all kernel builds with various eBPF configurations:
+
+          ### 🚫 No eBPF
+          - **Vanilla Kernels**: Standard Android 14 kernels without any eBPF features
+
+          ### 🔧 Basic eBPF
+          - **Kprobes + Override + BTF**: Basic eBPF with JIT, kprobes, bpf_override_return(), BTF support
+
+          ### 🚀 Full eBPF Stack
+          - **All Maps + Ringbuf + Uprobes + XDP + CO-RE**: Complete eBPF with 100+ configs
+          - **6.1.1x Optimized**: Same features but only for 6.1.1x kernels
+
+          ### 🛡️ Safe eBPF
+          - **117 Configs with Fallback**: Safe configuration with automatic fallback mechanism
+
+          ### 🔨 Build Improvements
+          - **Fixed Fragments**: Proper DEFCONFIG_FRAGMENT loading
+          - **Clean Build**: With make mrproper for clean source tree
+
+          ### 💪 ARM64 Support
+          - **ARM64 Override**: Full bpf_override_return() support on ARM64 devices
+          - **Full Matrix ARM64**: ARM64 support for all kernel versions
+
+          ### ✅ Final Complete
+          - **6.1.1x Final**: Complete eBPF implementation with all features
+
+          ## 📊 eBPF Feature Matrix
+
+          | Build Type | JIT | BTF | CO-RE | Override | Ringbuf | All Maps | Uprobes | XDP | ARM64 |
+          |------------|-----|-----|-------|----------|---------|----------|---------|-----|-------|
+          | Vanilla | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+          | Basic | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+          | Full | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
+          | ARM64 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+          ## 🔍 Kernel Versions
+
+          - **5.15 Series**: 5.15.157, 5.15.162, 5.15.165, 5.15.168
+          - **6.1 Series**: 6.1.102, 6.1.112, 6.1.115, 6.1.118
+
+          ## 📝 Key eBPF Configs Enabled
+
+          - `CONFIG_BPF=y`
+          - `CONFIG_BPF_SYSCALL=y`
+          - `CONFIG_BPF_JIT=y`
+          - `CONFIG_BPF_KPROBE_OVERRIDE=y`
+          - `CONFIG_FUNCTION_ERROR_INJECTION=y`
+          - `CONFIG_DEBUG_INFO_BTF=y`
+          - `CONFIG_BPF_CO_RE=y`
+          - `CONFIG_BPF_RINGBUF=y`
+          - `CONFIG_UPROBES=y`
+          - `CONFIG_XDP_SOCKETS=y`
+          - And 100+ more...
+
+          ## 🚀 Usage
+
+          1. Download the appropriate kernel for your device
+          2. Flash using fastboot or custom recovery
+          3. Verify eBPF features with `bpftool` or `cat /proc/config.gz | grep BPF`
+
+          ## ⚠️ Important Notes
+
+          - ARM64 builds include custom patches for error injection support
+          - Safe builds include automatic fallback for unsupported configs
+          - 6.1.1x builds are optimized for faster compilation
+
+          ## 📅 Build Date
+
+          $(date -u '+%Y-%m-%d %H:%M UTC')
+
+          ## 🔗 Source
+
+          Built from: https://github.com/${{ github.repository }}
+          Commit: ${{ github.sha }}
+          EOF
+
+      - name: Create compressed archives
+        run: |
+          cd release-artifacts
+
+          # Create individual archives for each workflow
+          for dir in */; do
+            if [ -d "$dir" ]; then
+              echo "Creating archive for $dir"
+              tar czf "${dir%/}.tar.gz" "$dir"
+            fi
+          done
+
+          # Create mega archive with everything
+          echo "Creating mega archive..."
+          tar czf ../kernelsu-ebpf-complete-collection.tar.gz .
+
+          cd ..
+          ls -lah *.tar.gz release-artifacts/*.tar.gz
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create the release
+          gh release create "${{ inputs.release_tag }}" \
+            --repo ${{ github.repository }} \
+            --title "${{ inputs.release_name }}" \
+            --notes-file RELEASE_NOTES.md \
+            --draft
+
+          # Upload the mega archive
+          gh release upload "${{ inputs.release_tag }}" \
+            --repo ${{ github.repository }} \
+            kernelsu-ebpf-complete-collection.tar.gz
+
+          # Upload individual archives
+          for file in release-artifacts/*.tar.gz; do
+            if [ -f "$file" ]; then
+              gh release upload "${{ inputs.release_tag }}" \
+                --repo ${{ github.repository }} \
+                "$file"
+            fi
+          done
+
+          # Publish the release
+          gh release edit "${{ inputs.release_tag }}" \
+            --repo ${{ github.repository }} \
+            --draft=false
+
+          echo "Release created successfully!"
+          echo "View at: https://github.com/${{ github.repository }}/releases/tag/${{ inputs.release_tag }}"
+
+      - name: Upload artifacts summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ebpf-collection-summary
+          path: |
+            RELEASE_NOTES.md
+            release-artifacts/
