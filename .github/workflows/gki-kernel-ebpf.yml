@@ -170,7 +170,14 @@ jobs:
             if [ -f "$patch" ]; then
               patch_name=$(basename "$patch")
               echo "[+] Applying $patch_name"
-              cd common && git am "$patch" || echo "[-] Failed to apply $patch_name" && cd ..
+              cd common
+              if git am "$patch"; then
+                echo "[+] Successfully applied $patch_name"
+              else
+                echo "[-] Failed to apply $patch_name, checking if already applied..."
+                git am --abort 2>/dev/null || true
+              fi
+              cd ..
             fi
           done
 
