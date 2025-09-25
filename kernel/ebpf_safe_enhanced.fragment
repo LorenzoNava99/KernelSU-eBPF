@@ -16,7 +16,11 @@ CONFIG_HAVE_EBPF_JIT=y
 # ============================================
 CONFIG_BPF_EVENTS=y
 CONFIG_FUNCTION_ERROR_INJECTION=y
+CONFIG_HAVE_FUNCTION_ERROR_INJECTION=y
 CONFIG_BPF_KPROBE_OVERRIDE=y
+# ARM64 specific for error injection (may not be available)
+CONFIG_HAVE_ARCH_KGDB=y
+CONFIG_ARCH_HAS_SYSCALL_WRAPPER=y
 
 # ============================================
 # PERFORMANCE MONITORING & PROFILING
